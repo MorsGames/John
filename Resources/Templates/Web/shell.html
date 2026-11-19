@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>@JOHN_DISPLAY_NAME@</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            background: #000000;
+            color: #ffffff;
+            display: grid;
+            place-items: center;
+            font: 16px Consolas, Menlo, monospace;
+        }
+
+        #canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            visibility: hidden;
+        }
+
+        #canvas:focus-visible {
+            outline: none;
+        }
+
+        #splash {
+            position: relative;
+            width: min(264px, calc(100vw - 48px));
+            text-align: center;
+        }
+
+        #loading-label {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        #loading-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        #progress-percent {
+            font-size: 14px;
+        }
+
+        #progress-container {
+            height: 16px;
+            padding: 2px;
+            background: #1c1c1c;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #0fcf7f;
+            transition: width 100ms ease-out;
+        }
+
+        #start {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            visibility: hidden;
+        }
+
+        #start svg {
+            width: 64px;
+            height: 64px;
+            fill: currentColor;
+            opacity: 0.5;
+            transition: opacity 100ms ease-out;
+        }
+
+        #start:hover svg,
+        #start:focus-visible svg {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" tabindex="0"></canvas>
+
+    <div id="splash" hidden>
+        <div id="loading-label">
+            <span id="loading-title">Loading…</span>
+            <span id="progress-percent">0%</span>
+        </div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <button id="start">
+        <svg viewBox="0 0 24 24">
+            <path d="M8 5.1v13.8l12-6.9z"/>
+        </svg>
+    </button>
+
+    <script>
+        const STATE_WAITING = 0;
+        const STATE_LOADING = 1;
+        const STATE_READY = 2;
+        const STATE_RUNNING = 3;
+        const STATE_FAILED = 4;
+
+        const canvas = document.getElementById("canvas");
+        const splash = document.getElementById("splash");
+        const loadingTitle = document.getElementById("loading-title");
+        const progressPercent = document.getElementById("progress-percent");
+        const progressContainer = document.getElementById("progress-container");
+        const progressBar = document.getElementById("progress-bar");
+        const startButton = document.getElementById("start");
+
+        let state = STATE_WAITING;
+        let ready = false;
+
+        function setState(newState) {
+            state = newState;
+
+            switch (state) {
+                case STATE_LOADING:
+                    canvas.style.visibility = "hidden";
+                    splash.hidden = false;
+                    startButton.style.visibility = "hidden";
+                    progressPercent.hidden = false;
+                    progressContainer.hidden = false;
+                    break;
+
+                case STATE_READY:
+                    canvas.style.visibility = "hidden";
+                    splash.hidden = true;
+                    startButton.style.visibility = "visible";
+                    progressPercent.hidden = false;
+                    progressContainer.hidden = false;
+                    startButton.focus();
+                    break;
+
+                case STATE_RUNNING:
+                    canvas.style.visibility = "visible";
+                    splash.hidden = true;
+                    startButton.style.visibility = "hidden";
+                    progressPercent.hidden = false;
+                    progressContainer.hidden = false;
+                    canvas.focus();
+                    break;
+
+                case STATE_FAILED:
+                    canvas.style.visibility = "hidden";
+                    splash.hidden = false;
+                    startButton.style.visibility = "hidden";
+                    progressPercent.hidden = true;
+                    progressContainer.hidden = true;
+                    break;
+            }
+        }
+
+        function setProgress(percent) {
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+        }
+
+        canvas.oncontextmenu = function(event) { event.preventDefault(); };
+
+        startButton.onclick = function() {
+            setState(STATE_RUNNING);
+            Module.callMain(Module.arguments);
+        };
+
+        setTimeout(function() {
+            if (state !== STATE_WAITING)
+                return;
+
+            if (ready)
+                setState(STATE_READY);
+            else
+                setState(STATE_LOADING);
+        }, 500);
+
+        var Module = {
+            canvas,
+            noInitialRun: true,
+            arguments: location.search.substring(1).split("&").filter(Boolean).map(decodeURIComponent),
+            instantiateWasm: function(imports, receiveInstance) {
+                const request = new XMLHttpRequest();
+                request.open("GET", "index.wasm");
+                request.responseType = "arraybuffer";
+                request.onprogress = function(event) {
+                    if (event.lengthComputable && event.total > 0)
+                        setProgress(Math.min(100, Math.floor(event.loaded / event.total * 100)));
+                    else
+                        progressPercent.textContent = `${(event.loaded / 1048576).toFixed(1)} MB`;
+                };
+                request.onload = function() {
+                    if (request.status < 200 || request.status >= 300) {
+                        Module.onAbort(`WASM download failed! HTTP ${request.status}`);
+                        return;
+                    }
+                    setProgress(100);
+                    loadingTitle.textContent = "Starting…";
+                    WebAssembly.instantiate(request.response, imports).then(function(result) {
+                        receiveInstance(result.instance, result.module);
+                    }).catch(Module.onAbort);
+                };
+                request.onerror = function() { Module.onAbort("WASM download failed!"); };
+                request.send();
+                return {};
+            },
+            onAbort: function(error) {
+                console.error(error);
+                setState(STATE_FAILED);
+                loadingTitle.textContent = "Unable to load! Please reload to retry. ^_^";
+            },
+            onRuntimeInitialized: function() {
+                ready = true;
+                if (state !== STATE_LOADING)
+                    return;
+
+                setState(STATE_READY);
+            }
+        };
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

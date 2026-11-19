@@ -1,0 +1,60 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        include:
+        - { os: windows-latest, rid: win-x64, ext: .exe }
+        - { os: ubuntu-22.04, rid: linux-x64 }
+        - { os: ubuntu-22.04-arm, rid: linux-arm64 }
+        - { os: macos-latest, rid: osx-arm64 }
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 11.0.x
+    - name: Install dependencies
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+    - name: Publish
+      run: dotnet publish Source/John.csproj -r ${{ matrix.rid }} -o Publish
+    - name: Rename
+      shell: bash
+      run: mv Publish/john${{ matrix.ext }} john-${{ matrix.rid }}${{ matrix.ext }}
+    - uses: actions/upload-artifact@v4
+      with:
+        name: john-${{ matrix.rid }}
+        path: john-${{ matrix.rid }}${{ matrix.ext }}
+
+  release:
+
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        merge-multiple: true
+    - name: Release
+      run: gh release create ${{ github.ref_name }} john-* --repo ${{ github.repository }}
+      env:
+        GH_TOKEN: ${{ github.token }}
