@@ -1,4 +1,4 @@
-name: John
+name: Build
 
 on:
   push:
@@ -12,4 +12,5 @@ permissions:
 
 jobs:
   john:
+    name: Build
     uses: MorsGames/John/.github/workflows/game.yml@master

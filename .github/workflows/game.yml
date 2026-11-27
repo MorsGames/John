@@ -9,6 +9,7 @@ permissions:
 jobs:
   plan:
 
+    name: Plan
     runs-on: ubuntu-slim
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
@@ -121,6 +122,7 @@ jobs:
 
   release:
 
+    name: Release
     if: startsWith(github.ref, 'refs/tags/')
     needs: build
     runs-on: ubuntu-slim
