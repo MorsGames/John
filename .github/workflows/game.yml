@@ -26,7 +26,7 @@ jobs:
       run: |
         const fs = require("fs");
         const runners = {
-          WindowsX64: "windows-2025",
+          WindowsX64: "windows-2022",
           WindowsX86: "windows-2022",
           LinuxX64: "ubuntu-24.04",
           LinuxARM64: "ubuntu-24.04-arm",
