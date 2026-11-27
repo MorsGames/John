@@ -11,6 +11,7 @@ internal static class CommandRegistry
         new RunCommand(),
         new PackageCommand(),
         new CleanCommand(),
+        new CICommand(),
         new VersionCommand(),
         new HelpCommand(),
     ];

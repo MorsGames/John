@@ -19,7 +19,7 @@ Supported platforms:
 
 0. Install the following:
 
-    - CMake 4.3+
+    - CMake 3.31+
     - Ninja
     - Visual Studio C++ tools (If compiling for Windows)
     - MSVC v141 tools (14.16), C++ Windows XP Support for VS 2017 (including Windows SDK 7.1A) and Windows SDK 10.0.17763.0 (If compiling for WindowsX86)

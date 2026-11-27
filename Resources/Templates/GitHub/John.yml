@@ -1,0 +1,15 @@
+name: John
+
+on:
+  push:
+    branches: [ @BRANCH@ ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ @BRANCH@ ]
+
+permissions:
+  contents: write
+
+jobs:
+  john:
+    uses: MorsGames/John/.github/workflows/game.yml@master

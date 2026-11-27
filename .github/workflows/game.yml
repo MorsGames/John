@@ -1,0 +1,137 @@
+name: John
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+
+    runs-on: ubuntu-slim
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      glad: ${{ steps.plan.outputs.glad }}
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: John.json
+        sparse-checkout-cone-mode: false
+    - name: Plan
+      id: plan
+      shell: node {0}
+      run: |
+        const fs = require("fs");
+        const runners = {
+          WindowsX64: "windows-2025",
+          WindowsX86: "windows-2022",
+          LinuxX64: "ubuntu-24.04",
+          LinuxARM64: "ubuntu-24.04-arm",
+          macOSARM64: "macos-26",
+          macOSUniversal: "macos-26",
+          Web: "ubuntu-24.04",
+        };
+        const manifest = new Function(`return ${fs.readFileSync("John.json", "utf8")}`)();
+        const matrix = [];
+        for (const platform of manifest.platforms ?? []) {
+          matrix.push({ platform, runner: runners[platform] });
+        }
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `matrix=${JSON.stringify(matrix)}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `glad=${manifest.glad != null}\n`);
+
+  build:
+
+    name: ${{ matrix.platform }}
+    needs: plan
+    if: needs.plan.outputs.matrix != '[]'
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+
+    - name: Install John
+      shell: bash
+      run: |
+        case "$RUNNER_OS-$RUNNER_ARCH" in
+          Windows-X64) file=john-win-x64.exe; name=john.exe ;;
+          Linux-X64) file=john-linux-x64; name=john ;;
+          Linux-ARM64) file=john-linux-arm64; name=john ;;
+          macOS-ARM64) file=john-osx-arm64; name=john ;;
+        esac
+        curl -fsSL --create-dirs "https://github.com/MorsGames/John/releases/latest/download/$file" -o "$RUNNER_TEMP/bin/$name"
+        chmod +x "$RUNNER_TEMP/bin/$name"
+        echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+    - name: Set up Windows x86
+      if: matrix.platform == 'WindowsX86'
+      shell: pwsh
+      run: |
+        $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer"
+        $vs = & "$installer\vswhere.exe" -latest -property installationPath
+        $process = Start-Process -FilePath "$installer\vs_installer.exe" -Wait -PassThru -ArgumentList `
+          "modify", "--installPath", "`"$vs`"", `
+          "--add", "Microsoft.VisualStudio.Component.VC.v141.x86.x64", `
+          "--add", "Microsoft.VisualStudio.Component.WinXP", `
+          "--quiet", "--norestart"
+        exit $process.ExitCode
+
+    - name: Set up Linux
+      if: startsWith(matrix.platform, 'Linux')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-19
+        echo /usr/lib/llvm-19/bin >> "$GITHUB_PATH"
+        curl -fsSL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-$(uname -m).AppImage" -o "$RUNNER_TEMP/bin/linuxdeploy"
+        curl -fsSL "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(uname -m).AppImage" -o "$RUNNER_TEMP/bin/appimagetool"
+        chmod +x "$RUNNER_TEMP/bin/linuxdeploy" "$RUNNER_TEMP/bin/appimagetool"
+
+    - name: Set up macOS
+      if: startsWith(matrix.platform, 'macOS')
+      run: brew install create-dmg
+
+    - name: Set up Emscripten
+      if: matrix.platform == 'Web'
+      run: |
+        git clone --depth 1 https://github.com/emscripten-core/emsdk.git ~/emsdk
+        ~/emsdk/emsdk install latest
+        ~/emsdk/emsdk activate latest
+
+    - uses: actions/setup-python@v7
+      if: needs.plan.outputs.glad == 'true'
+      with:
+        python-version: 3.x
+    - name: Install Glad
+      if: needs.plan.outputs.glad == 'true'
+      run: pip install glad
+
+    - name: Package
+      run: john package all ${{ matrix.platform }} Release
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.platform }}
+        path: Artifacts/${{ matrix.platform }}
+
+  release:
+
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-slim
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        path: Artifacts
+    - name: Release
+      run: find Artifacts -type f -exec gh release create ${{ github.ref_name }} --repo ${{ github.repository }} {} +
+      env:
+        GH_TOKEN: ${{ github.token }}

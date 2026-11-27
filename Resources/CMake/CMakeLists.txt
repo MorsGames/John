@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.3)
+cmake_minimum_required(VERSION 3.31)
 
 include("${CMAKE_CURRENT_LIST_DIR}/Project.cmake")
 
