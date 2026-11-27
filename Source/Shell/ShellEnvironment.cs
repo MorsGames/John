@@ -79,14 +79,6 @@ internal sealed class ShellEnvironment : IEnumerable<KeyValuePair<string, string
         return null;
     }
 
-    public string Require(string program, string? hint = null)
-    {
-        var path = Find(program);
-        if (path == null)
-            throw new JohnException($"{program} not found! {hint ?? "Is it installed and in PATH?"}");
-        return path;
-    }
-
     public void ImportBatch(string file, string args)
     {
         var batch = EscapeHelper.CMD(file);

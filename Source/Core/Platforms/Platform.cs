@@ -1,5 +1,3 @@
-using FileSystem = Microsoft.VisualBasic.FileIO.FileSystem;
-
 namespace John;
 
 internal abstract class Platform
@@ -46,10 +44,7 @@ internal abstract class Platform
     }
 
     // 6. Or pack it up for the others
-    public virtual void Package(BuildContext context, Game game, string destination)
-    {
-        FileSystem.CopyDirectory(context.GetLayout(game).OutputDirectory, destination);
-    }
+    public abstract void Package(BuildContext context, Game game, string destination);
 
     // Other
     public override string ToString()

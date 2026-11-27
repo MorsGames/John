@@ -1,3 +1,5 @@
+using System.Formats.Tar;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -82,8 +84,7 @@ internal abstract class MacOSPlatform : Platform
             var assets = Path.Combine(layout.ResourceDirectory, "Assets.car");
             context.Step("Compiling the icon", inputs: [icon], outputs: [assets], run: () =>
             {
-                var actool = build.Environment.Require("actool", "It comes with Xcode.");
-                Shell.Command(actool,
+                Shell.Command("actool",
                 [
                     icon,
                     "--app-icon", "AppIcon",
@@ -124,13 +125,15 @@ internal abstract class MacOSPlatform : Platform
     public override void Package(BuildContext context, Game game, string destination)
     {
         var output = context.GetLayout(game);
+        Directory.CreateDirectory(destination);
         if (output.BundleDirectory == null)
         {
-            base.Package(context, game, destination);
+            using var file = File.Create(Path.Combine(destination, $"{game.Name}-{Name}.tar.gz"));
+            using var gzip = new GZipStream(file, CompressionLevel.Optimal);
+            TarFile.CreateFromDirectory(output.OutputDirectory, gzip, false);
             return;
         }
 
-        Directory.CreateDirectory(destination);
         var app = Path.GetFileName(output.BundleDirectory);
         var args = new List<string>();
         var background = context.Paths.FindMetadataFile(game, "macOS/DMGBackground.png");
@@ -147,8 +150,7 @@ internal abstract class MacOSPlatform : Platform
             Path.Combine(destination, $"{game.Name}-{Name}.dmg"),
             output.OutputDirectory,
         ]);
-        var createDMG = context.Environment.Require("create-dmg", "Install it with: brew install create-dmg");
-        Shell.Command(createDMG, args, context.Environment).Run();
+        Shell.Command("create-dmg", args, context.Environment).Run();
     }
 
     [DllImport("libc", EntryPoint = "ttyname")]

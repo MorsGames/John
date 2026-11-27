@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=@JOHN_DISPLAY_NAME@
+Comment=@JOHN_DESCRIPTION@
+Exec=@JOHN_TARGET@
+Icon=@JOHN_TARGET@
+Terminal=false
+Categories=Game;

@@ -35,4 +35,18 @@ internal static class EscapeHelper
     {
         return $"\"{value.Replace("\"", "\"\"")}\"";
     }
+
+    public static string Desktop(string value)
+    {
+        return value
+            .Replace("\\", "\\\\")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t");
+    }
+
+    public static string SH(string value)
+    {
+        return $"'{value.Replace("'", @"'\''")}'";
+    }
 }

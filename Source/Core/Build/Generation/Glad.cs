@@ -23,7 +23,7 @@ internal static class Glad
             pythons = ["python", "python3"];
         var python = environment.FindFirst(pythons);
         if (python == null)
-            throw new JohnException("Python not found! GLAD needs Python 3, with: pip install glad");
+            throw new JohnException("Python not found, which Glad needs!");
 
         Log.Section("Regenerating GLAD");
         Directory.CreateDirectory(output);

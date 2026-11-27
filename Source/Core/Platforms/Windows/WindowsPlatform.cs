@@ -29,7 +29,7 @@ internal abstract class WindowsPlatform : Platform
         // Swap the modern Windows SDK out for the XP one
         var xpSDK = Microsoft.Win32.Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v7.1A", "InstallationFolder", null) as string;
         if (xpSDK == null)
-            throw new JohnException("Windows XP SDK (v7.1A) not found! Install C++ Windows XP Support for VS 2017 (v141) tools.");
+            throw new JohnException("Windows XP SDK (v7.1A) not found!");
         var vcTools = context.Environment["VCToolsInstallDir"];
         var ucrt = context.Environment["UniversalCRTSdkDir"];
         var ucrtVersion = context.Environment["UCRTVersion"];
@@ -124,7 +124,7 @@ internal abstract class WindowsPlatform : Platform
         args.AddRange(components);
         args.Add("-find");
         args.Add(@"Common7\Tools\VsDevCmd.bat");
-        var vsWhere = context.Environment.Require(Path.Combine(VisualStudioInstaller, "vswhere.exe"), "Do you have Visual Studio installed?");
+        var vsWhere = Path.Combine(VisualStudioInstaller, "vswhere.exe");
         var output = Shell.Command(vsWhere, args, context.Environment).Capture();
         var vsDevCmd = output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
         if (vsDevCmd == null)

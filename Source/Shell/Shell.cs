@@ -13,7 +13,9 @@ internal static class Shell
 
     public static Command Command(string program, IEnumerable<string> args, ShellEnvironment environment)
     {
-        var path = environment.Require(program);
+        var path = environment.Find(program);
+        if (path == null)
+            throw new JohnException($"{program} not found!");
         var extension = Path.GetExtension(path).ToLowerInvariant();
         if (Hosts.Current == Host.Windows && extension is ".cmd" or ".bat")
         {

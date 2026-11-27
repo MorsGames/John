@@ -18,7 +18,7 @@ internal sealed class Web : Platform
             emsdk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "emsdk");
         var script = Path.Combine(emsdk, Hosts.Current == Host.Windows ? "emsdk_env.bat" : "emsdk_env.sh");
         if (!File.Exists(script))
-            throw new JohnException("Emscripten SDK not found! Install it to ~/emsdk, or set EMSDK to wherever it is.");
+            throw new JohnException("Emscripten SDK not found!");
 
         if (Hosts.Current == Host.Windows)
         {

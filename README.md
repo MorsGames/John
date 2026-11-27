@@ -27,6 +27,8 @@ Supported platforms:
     - Apple Clang 17+ (If compiling for macOS)
     - Xcode with `actool` (If compiling a macOS app with `macOS/AppIcon.icon`)
     - `create-dmg`, installed with `brew install create-dmg` (If packaging a macOS app)
+    - `linuxdeploy`, downloaded from [its releases](https://github.com/linuxdeploy/linuxdeploy/releases) (If packaging a Linux app)
+    - `appimagetool`, downloaded from [its releases](https://github.com/AppImage/appimagetool/releases) (If packaging a Linux app)
     - Emscripten SDK with Emscripten 4.0+ installed and activated (If compiling for Web)
     - Python 3 with the `glad` package, installed with `pip install glad` (If using GLAD generation)
 
@@ -213,9 +215,9 @@ Supported platforms:
 
     - `Metadata/Windows/AppIcon.ico` (For Windows)
     - `Metadata/macOS/AppIcon.icon`, `Metadata/macOS/Credits.rtf`, and `Metadata/macOS/DMGBackground.png` (For macOS)
-    - (Sorry Linux bros...)
+    - `Metadata/Linux/AppIcon.png` (For Linux)
 
-    These files are all optional, though having them is highly recommended.
+    These files are optional, except for the Linux icon, which packaging needs.
 
 4. Grab John from [the releases](https://github.com/MorsGames/John/releases), and run the executable you just downloaded. Follow the instructions, and it should install itself to your machine and appear in your `PATH`. From there, you can run `john` from anywhere and it should work.
 
