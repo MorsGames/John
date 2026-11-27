@@ -88,7 +88,7 @@ jobs:
       if: startsWith(matrix.platform, 'Linux')
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang-19
+        sudo apt-get install -y clang-19 clang-tools-19
         echo /usr/lib/llvm-19/bin >> "$GITHUB_PATH"
         curl -fsSL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-$(uname -m).AppImage" -o "$RUNNER_TEMP/bin/linuxdeploy"
         curl -fsSL "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(uname -m).AppImage" -o "$RUNNER_TEMP/bin/appimagetool"
