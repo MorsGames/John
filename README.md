@@ -30,7 +30,7 @@ Supported platforms:
     - `linuxdeploy`, downloaded from [its releases](https://github.com/linuxdeploy/linuxdeploy/releases) (If packaging a Linux app)
     - `appimagetool`, downloaded from [its releases](https://github.com/AppImage/appimagetool/releases) (If packaging a Linux app)
     - Emscripten SDK with Emscripten 4.0+ installed and activated (If compiling for Web)
-    - Python 3 with the `glad` package, installed with `pip install glad` (If using GLAD generation)
+    - Python 3 with the `glad` package, installed with `pip install glad` (If using Glad generation)
 
     For Linux builds through WSL2, install all this stuff in your WSL distro too. This includes John.
 
@@ -170,7 +170,7 @@ Supported platforms:
             "postPackage": []
         },
 
-        // GLAD loader generation
+        // Glad loader generation
         // Skipped when omitted
         "glad": {
             // Required APIs and versions

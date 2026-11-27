@@ -25,7 +25,7 @@ internal static class Glad
         if (python == null)
             throw new JohnException("Python not found, which Glad needs!");
 
-        Log.Section("Regenerating GLAD");
+        Log.Section("Regenerating Glad");
         Directory.CreateDirectory(output);
         Shell.Command(python,
         [
@@ -39,6 +39,6 @@ internal static class Glad
             $"--extensions={glad.Extensions}",
         ], environment).WithWorkingDirectory(project.Paths.Root).Run();
         File.WriteAllText(stampPath, stamp);
-        Log.Success($"GLAD is regenerated in {glad.Output}!");
+        Log.Success($"Glad is regenerated in {glad.Output}!");
     }
 }
